@@ -1,0 +1,60 @@
+@import 'tailwindcss';
+
+/* 子ども向け: 丸ゴシック系を優先 */
+html {
+  font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', 'Rounded Mplus 1c',
+    'Hiragino Kaku Gothic ProN', 'Noto Sans JP', system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+  background: #0f172a;
+  overscroll-behavior: none;
+}
+
+/* ---- アニメーション ---- */
+@keyframes kq-floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.kq-floaty { animation: kq-floaty 2.4s ease-in-out infinite; }
+
+@keyframes kq-shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 2px); }
+  40% { transform: translate(5px, -2px); }
+  60% { transform: translate(-4px, 1px); }
+  80% { transform: translate(3px, -1px); }
+}
+.kq-shake { animation: kq-shake 0.45s ease-in-out 2; }
+
+@keyframes kq-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.kq-pop { animation: kq-pop 0.35s ease-out both; }
+
+@keyframes kq-roll {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+.kq-roll { animation: kq-roll 1.6s ease-in-out infinite; transform-origin: 50% 80%; }
+
+@keyframes kq-timewarp {
+  0% { transform: scale(1); filter: blur(0); opacity: 1; }
+  100% { transform: scale(3); filter: blur(6px); opacity: 0; }
+}
+.kq-timewarp { animation: kq-timewarp 1.2s ease-in both; }
+
+@keyframes kq-fadein {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.kq-fadein { animation: kq-fadein 0.4s ease-out both; }
+
+/* ボタンの押し込み */
+.kq-press { transition: transform 0.06s ease; }
+.kq-press:active { transform: scale(0.94); }

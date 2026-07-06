@@ -144,7 +144,7 @@ export function advance(state: RunState, market: Market, rates: CashRateProvider
   };
 
   if (!isLast) {
-    const panic = detectPanic(next, market, returns);
+    const panic = detectPanic(next, returns);
     if (panic) return { ...next, pendingPanic: panic, panics: [...next.panics, panic] };
   }
   return next;
@@ -152,7 +152,6 @@ export function advance(state: RunState, market: Market, rates: CashRateProvider
 
 function detectPanic(
   state: RunState,
-  market: Market,
   returns: Record<AssetId, number>,
 ): PanicRecord | null {
   if (state.panics.length >= maxPanicsFor(state.cfg.lengthMonths)) return null;

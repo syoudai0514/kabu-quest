@@ -54,13 +54,18 @@ function scriptFor(kind: MoshimoKind, state: RunState): RunAction[] {
       return state.actions.map((a) =>
         a.type === 'panicChoice' && a.choice === 'sell' ? { ...a, choice: 'hold' as const } : a,
       );
-    case 'ifSold':
+    case 'ifSold': {
       // 最初のパニックで全部売って、以後なにもしない
-      return state.actions
-        .filter((a) => a.turn <= firstPanicTurn(state))
+      const panicTurn = firstPanicTurn(state);
+      const script = state.actions
+        .filter((a) => a.turn <= panicTurn)
         .map((a) => (a.type === 'panicChoice' ? { ...a, choice: 'sell' as const } : a))
-        // 売却後の追加購入・つみたては起きなかったことにする
-        .filter((a) => a.type !== 'buy' || a.turn < firstPanicTurn(state));
+        // 売却後の追加購入は起きなかったことにする
+        .filter((a) => a.type !== 'buy' || a.turn < panicTurn);
+      // パニック売りした世界では、つみたても止めたはず
+      script.push({ type: 'tsumitate', turn: panicTurn, on: false });
+      return script;
+    }
     case 'ifCashOnly':
       return [];
     case 'ifInvested': {

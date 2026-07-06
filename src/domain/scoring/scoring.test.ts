@@ -95,6 +95,24 @@ describe('buildMoshimo', () => {
     expect(moshimo.values[24]).toBeLessThan(s.valueHistory[24]);
   });
 
+  it('if-sold world also stops tsumitate after the panic sell', () => {
+    const m = vShapeMarket();
+    let s = createRun(cfg());
+    s = doBuy(s, 'sp500', 10000);
+    s = setTsumitate(s, true);
+    for (let i = 0; i < 24; i++) {
+      s = advance(s, m, zeroRate);
+      if (s.pendingPanic) s = resolvePanic(s, 'hold');
+    }
+    const moshimo = buildMoshimo(s, m, zeroRate);
+    expect(moshimo.kind).toBe('ifSold');
+    // 売却後は現金のみ: 各月の増分がおこづかい1000円ちょうどになる
+    const panicTurn = s.panics[0].turn;
+    for (let t = panicTurn + 1; t < 23; t++) {
+      expect(moshimo.values[t + 1] - moshimo.values[t]).toBeCloseTo(1000);
+    }
+  });
+
   it('shows if-invested for a cash-only player', () => {
     const m = makeMarket(growth(100, 0.02, 30), growth(50, 0.02, 30));
     let s = createRun(cfg());

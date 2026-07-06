@@ -22,9 +22,12 @@ interface MetaState {
   runsCompleted: number;
   /** 直近の旅の窓開始index（同じ時代の連続再訪を防ぐ。GDD §6.1） */
   recentStarts: number[];
+  /** じだいずかんコンプ時のエンディング（とうしかのあかし）表示済みか */
+  endingSeen: boolean;
 
   addRunResult: (log: RunLogEntry, acorns: number, medals: MedalId[], windowStart: number) => void;
   plantTree: () => boolean;
+  markEndingSeen: () => void;
 }
 
 export const useMeta = create<MetaState>()(
@@ -37,6 +40,7 @@ export const useMeta = create<MetaState>()(
       runLogs: [],
       runsCompleted: 0,
       recentStarts: [],
+      endingSeen: false,
 
       addRunResult: (log, acorns, medals, windowStart) =>
         set((s) => {
@@ -57,6 +61,8 @@ export const useMeta = create<MetaState>()(
         set((s) => ({ acorns: s.acorns - TREE_COST, trees: s.trees + 1 }));
         return true;
       },
+
+      markEndingSeen: () => set({ endingSeen: true }),
     }),
     { name: 'kq-meta', version: 1 },
   ),

@@ -9,6 +9,7 @@ import { useState } from 'react';
 import Button from './Button';
 import CharacterBubble from './CharacterBubble';
 import { useGame } from '../../state/game';
+import { useMeta } from '../../state/meta';
 import { useSettings } from '../../state/settings';
 import { ASSETS } from '../../data/assets';
 import { term } from '../i18n/text';
@@ -29,12 +30,19 @@ const AFTER_LINES: Record<PanicChoice, string> = {
 export default function PanicBattle({ panic }: { panic: PanicRecord }) {
   const choosePanic = useGame((s) => s.choosePanic);
   const cash = useGame((s) => s.rs?.holdings.cash ?? 0);
+  const runLogs = useMeta((s) => s.runLogs);
   const { adultMode, shakeOn } = useSettings();
   const [chosen, setChosen] = useState<PanicChoice | null>(null);
 
   const asset = ASSETS.find((a) => a.id === panic.asset)!;
   const line = PANIC_LINES[Math.abs(panic.turn) % PANIC_LINES.length];
   const pct = Math.round(panic.severity * 100);
+
+  // 我慢に勝つたびパニックンは小さく、負けると太る（GDD §4）
+  const past = runLogs.flatMap((l) => l.panics).filter((p) => p.choice !== null);
+  const wins = past.filter((p) => p.choice !== 'sell').length;
+  const losses = past.length - wins;
+  const panicScale = Math.min(Math.max(1 + (losses - wins) * 0.08, 0.55), 1.5);
 
   const choose = (c: PanicChoice) => {
     setChosen(c);
@@ -51,8 +59,13 @@ export default function PanicBattle({ panic }: { panic: PanicRecord }) {
         {!chosen ? (
           <div className="flex flex-col gap-4">
             <div className="text-center">
-              <div className="text-7xl kq-floaty">👻</div>
-              <p className="mt-1 text-sm font-bold tracking-widest text-purple-300">パニックン があらわれた！</p>
+              <div className="text-7xl kq-floaty" style={{ transform: `scale(${panicScale})` }}>
+                👻
+              </div>
+              <p className="mt-1 text-sm font-bold tracking-widest text-purple-300">
+                パニックン があらわれた！
+                {panicScale < 0.8 && <span className="block text-xs text-purple-400">（まえより ちいさく なってる…！）</span>}
+              </p>
             </div>
             <div className="rounded-2xl bg-purple-900/80 p-3 text-center">
               <p className="text-lg font-bold text-rose-300">

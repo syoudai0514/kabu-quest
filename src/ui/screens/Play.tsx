@@ -1,5 +1,5 @@
 /** メイン相場画面（1ターン＝1ヶ月）。「なにもしない」が最速の操作（GDD §5） */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Button from '../components/Button';
 import CharacterBubble from '../components/CharacterBubble';
 import Snowball from '../components/Snowball';
@@ -26,13 +26,26 @@ export default function Play() {
   const { adultMode, sensitiveOn, tutorialDone, set: setSettings } = useSettings();
   const runsCompleted = useMeta((s) => s.runsCompleted);
   const [tutStep, setTutStep] = useState(0);
+  const [auto, setAuto] = useState(false);
 
   const market = useMemo(getMarket, []);
-  if (!rs) {
-    // 旅がない状態でこの画面に来たら安全にホームへ
-    go('home');
-    return null;
-  }
+
+  // 旅がない状態でこの画面に来たら安全にホームへ（render中のset回避のためeffectで）
+  useEffect(() => {
+    if (!rs) go('home');
+  }, [rs, go]);
+
+  // じどうそうこう: ながいたび(120ヶ月)を120タップにしないための倍速モード。
+  // パニック中・チュートリアル中は自動停止する
+  const autoActive = auto && !!rs && !rs.pendingPanic && !rs.finished;
+  const autoInterval = rs && rs.cfg.lengthMonths > 24 ? 450 : 1000;
+  useEffect(() => {
+    if (!autoActive) return;
+    const id = window.setInterval(() => useGame.getState().advanceMonth(), autoInterval);
+    return () => window.clearInterval(id);
+  }, [autoActive, autoInterval]);
+
+  if (!rs) return null;
 
   const idx = rs.cfg.startIndex + rs.turn;
   const realMonth = monthAt(market, idx);
@@ -150,11 +163,20 @@ export default function Play() {
         )}
       </div>
 
-      {/* つぎのつきへ */}
-      <div className="mt-auto px-4 pb-5 pt-3">
-        <Button size="lg" onClick={advanceMonth} disabled={!!rs.pendingPanic || rs.finished}>
+      {/* つぎのつきへ＋じどうそうこう */}
+      <div className="mt-auto flex items-center gap-2 px-4 pb-5 pt-3">
+        <Button size="lg" className="flex-1" onClick={advanceMonth} disabled={!!rs.pendingPanic || rs.finished || auto}>
           ⏩ {term('nextMonth', adultMode)}
         </Button>
+        <button
+          onClick={() => setAuto(!auto)}
+          className={`kq-press h-full shrink-0 rounded-3xl px-4 py-4 text-sm font-bold ${
+            auto ? 'bg-emerald-500 text-white' : 'bg-white/10 text-slate-300'
+          }`}
+          aria-label="じどうで すすむ"
+        >
+          {auto ? '⏸ とめる' : '▶▶ じどう'}
+        </button>
       </div>
 
       {/* チュートリアル（初回のみ・3ステップ） */}

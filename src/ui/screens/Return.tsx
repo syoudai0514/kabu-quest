@@ -2,31 +2,39 @@
  * 帰還シーケンス: じだいのタネあかし → 紙芝居 → もしもタイムライン → スコア
  * カタルシスの設計順序が本作の要（GDD §6.1, §6.4, §6.6）
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from '../components/Button';
 import CharacterBubble from '../components/CharacterBubble';
 import ValueChart from '../components/ValueChart';
 import StarRating from '../components/StarRating';
 import { useGame } from '../../state/game';
+import { useMeta } from '../../state/meta';
 import { useSettings } from '../../state/settings';
 import { monthAdd } from '../../domain/market/series';
+import { HISTORICAL_EVENTS } from '../../domain/events/history';
 import { fmtYen } from '../i18n/text';
 import { MEDALS } from '../medals';
-import { sfxAcorn } from '../../platform/sound';
+import { sfxAcorn, sfxFanfare } from '../../platform/sound';
 
-type Step = 'reveal' | 'story' | 'moshimo' | 'score';
+type Step = 'reveal' | 'story' | 'moshimo' | 'score' | 'ending';
 
 export default function ReturnScreen() {
   const { rs, result, finishReturn, startRun } = useGame();
-  const adultMode = useSettings((s) => s.adultMode);
+  const { adultMode, sensitiveOn } = useSettings();
+  const { zukanEvents, endingSeen, markEndingSeen } = useMeta();
   const [step, setStep] = useState<Step>('reveal');
   const [eventIdx, setEventIdx] = useState(0);
   const [pageIdx, setPageIdx] = useState(0);
 
-  if (!rs || !result) {
-    finishReturn();
-    return null;
-  }
+  const broken = !rs || !result;
+  useEffect(() => {
+    if (broken) finishReturn();
+  }, [broken, finishReturn]);
+  if (!rs || !result) return null;
+
+  // じだいずかんコンプ → 一度だけエンディング（とうしかのあかし。GDD §4）
+  const allEventIds = HISTORICAL_EVENTS.filter((e) => sensitiveOn || !e.sensitive).map((e) => e.id);
+  const zukanComplete = allEventIds.every((id) => zukanEvents.includes(id));
   const { score, moshimo, events, startMonth } = result;
   const endMonth = monthAdd(startMonth, rs.cfg.lengthMonths);
   const [sy, sm] = startMonth.split('-');
@@ -168,7 +176,17 @@ export default function ReturnScreen() {
           )}
 
           <div className="mt-auto flex flex-col gap-2">
-            <Button size="lg" onClick={finishReturn}>
+            <Button
+              size="lg"
+              onClick={() => {
+                if (zukanComplete && !endingSeen) {
+                  sfxFanfare();
+                  setStep('ending');
+                } else {
+                  finishReturn();
+                }
+              }}
+            >
               🌲 もりへ かえる
             </Button>
             <Button
@@ -178,6 +196,32 @@ export default function ReturnScreen() {
               🔁 もういちど おなじ じだいへ
             </Button>
           </div>
+        </div>
+      )}
+
+      {step === 'ending' && (
+        <div className="flex flex-1 flex-col items-center justify-center gap-5 kq-fadein">
+          <div className="text-6xl kq-pop">🎖️</div>
+          <h2 className="text-xl font-bold text-amber-200">とうしかの あかし</h2>
+          <CharacterBubble who="fukujii">
+            すべての じだいを みてきたきみに、もう おしえることは ない。
+            おまつりの あとも、こおりつく ふゆも、きみは じぶんの めで みてきたのじゃから。
+          </CharacterBubble>
+          <CharacterBubble who="fukujii">
+            さいごに ひとつだけ。もう タイムマシンは いらんのじゃよ。<br />
+            きみには <b>「じかん」という ほんものの タイムマシン</b>が あるからの。
+            これから ながい ながい たびを、たのしんでな。
+          </CharacterBubble>
+          <CharacterBubble who="colin">ぼくも いっしょに いくよ！ おめでとう！！</CharacterBubble>
+          <Button
+            size="lg"
+            onClick={() => {
+              markEndingSeen();
+              finishReturn();
+            }}
+          >
+            🌲 もりへ かえる
+          </Button>
         </div>
       )}
     </div>

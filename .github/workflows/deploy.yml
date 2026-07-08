@@ -1,6 +1,5 @@
 # GitHub Pagesへの自動デプロイ
-# 初回のみ: リポジトリの Settings → Pages → Build and deployment →
-# Source を「GitHub Actions」にすること。
+# Settings → Pages → Source は「GitHub Actions」に設定済み。
 # 公開URL: https://syoudai0514.github.io/kabu-quest/
 name: Deploy to GitHub Pages
 
@@ -25,10 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Pagesが未有効ならこのステップが自動で有効化する
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/setup-node@v4
         with:
           node-version: 22

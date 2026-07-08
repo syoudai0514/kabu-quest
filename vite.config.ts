@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 // PWA: 全データ(指数JSON含む)をprecacheし完全オフラインで遊べるようにする。
 // 個人情報は扱わないためネットワーク系のruntimeCachingは不要。
 export default defineConfig({
+  // GitHub Pages配信時はサブパス(/kabu-quest/)になるためCIから注入する。
+  // ローカル開発・通常ビルドは '/' のまま
+  base: process.env.BASE_PATH ?? '/',
   plugins: [
     react(),
     tailwindcss(),
